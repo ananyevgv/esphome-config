@@ -1,4 +1,16 @@
 #-------------------------------------------
+# Add yaml 
+#packages:
+#  opentherm: !include 
+#    file: packages/ot_khenderick.yaml
+#    vars:
+#      ot_read: 15
+#      ot_write: 2
+#      pid_temperature: sensor.kitchen_t
+# and copy file esphome/packages/
+#------------------------------------------- 
+
+#-------------------------------------------
 # OPENTHERM KHENDERICK 
 #-------------------------------------------
 

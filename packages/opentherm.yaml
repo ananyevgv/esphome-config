@@ -1,4 +1,16 @@
 #-------------------------------------------
+# Add yaml 
+#packages:
+#  opentherm: !include 
+#    file: packages/opentherm.yaml
+#      vars:
+#        in: 15
+#        out: 2
+#      pid_temperature: sensor.kitchen_t
+# and copy file esphome/packages/
+#------------------------------------------- 
+
+#-------------------------------------------
 # OPENTHERM
 #-------------------------------------------
 opentherm:

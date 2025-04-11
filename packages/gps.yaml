@@ -1,0 +1,45 @@
+#-------------------------------------------
+# Add yaml 
+#packages:
+#  gps: !include 
+#    file: packages/gps.yaml
+#    vars:
+#      TX_GPS: 3
+#      RX_GPS: 1
+# and copy file esphome/packages/
+#------------------------------------------- 
+
+#-------------------------------------------
+# UART
+#-------------------------------------------
+uart:
+ # tx_pin: $TX_GPS
+  rx_pin: $RX_GPS
+  baud_rate: 9600
+  debug:
+    direction: BOTH
+    dummy_receiver: false
+    after:
+      delimiter: "\n"
+    sequence:
+      - lambda: UARTDebug::log_string(direction, bytes);
+
+#-------------------------------------------
+# GPS
+#-------------------------------------------    
+gps:
+  latitude:
+    name: "Latitude"
+    icon: "mdi:latitude"
+  longitude:
+    name: "Longitude"
+    icon: "mdi:longitude"
+  altitude:
+    name: "Altitude"
+    icon: "mdi:waves-arrow-up"
+  satellites:
+    name: "Satellites"
+    icon: "mdi:satellite-variant"
+    
+#time:
+#  - platform: gps

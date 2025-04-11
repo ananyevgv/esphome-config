@@ -1,0 +1,43 @@
+#-------------------------------------------
+# Add yaml 
+#packages:
+#  lilygo_t_battery: !include packages/lilygo_t_battery.yaml
+# and copy file esphome/packages/
+#-------------------------------------------
+# EXTERNAL COMPONENT
+#-------------------------------------------
+external_components:
+  - source: github://ananyevgv/esphome-components
+    components: [ lilygo_t_battery ]
+    refresh: 0s
+    
+#-------------------------------------------
+# SENSOR
+#-------------------------------------------
+sensor:
+  - platform: lilygo_t_battery
+    update_interval: 5s
+    voltage:
+      name: "${name} battery Voltage"
+      id: vbatt
+    bus_voltage:
+      name: "${name} bus Voltage"
+      id: vbus
+    level:
+      name: "${name} battery level"
+      id: batt
+      
+#-------------------------------------------
+# BINARY SENSOR
+#-------------------------------------------
+binary_sensor:
+  - platform: template
+    name: "${name} charge"
+    device_class: battery_charging
+    lambda: |-
+      if (id(vbus).state > 0) {
+        return true;
+      } else {
+        return false;
+      }
+  

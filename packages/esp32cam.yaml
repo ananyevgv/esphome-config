@@ -1,0 +1,45 @@
+
+#-------------------------------------------
+# OUTPUT
+#-------------------------------------------
+output:
+  - platform: ledc
+    pin: GPIO4
+    id: GPIO4
+    frequency: 100Hz
+ 
+#-------------------------------------------
+# LIGHTS
+#-------------------------------------------
+light:
+  - platform: monochromatic
+    output: GPIO4
+    name: flash
+
+#-------------------------------------------
+# CAMERA
+#-------------------------------------------
+esp32_camera:
+  external_clock:
+    pin: GPIO0
+    frequency: 20MHz
+  i2c_pins: #internal for camera
+    sda: GPIO26
+    scl: GPIO27
+  data_pins: [GPIO5, GPIO18, GPIO19, GPIO21, GPIO36, GPIO39, GPIO34, GPIO35]
+  vsync_pin: GPIO25
+  href_pin: GPIO23
+  pixel_clock_pin: GPIO22
+  power_down_pin: GPIO32
+
+  # Image settings
+  name: "${name} ESP32 CAM"
+  resolution: 1024x768 #1600x1200
+  jpeg_quality: 10 #10best 63 worst
+  #contrast: 1
+  #brightness: 1
+  #saturation: 1
+  #vertical_flip: true
+ # horizontal_mirror: true
+  max_framerate: 5 fps
+  #idle_framerate: 0.2 fps #default 0.1

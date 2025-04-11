@@ -1,0 +1,81 @@
+#-------------------------------------------
+# Add yaml 
+#  time-server: !include 
+#    file: packages/time-server.yaml
+#    vars:
+#      GPS_TX: 39  #1
+#      GPS_RX: 37 #3
+# and copy file esphome/packages/
+#------------------------------------------- 
+##########################################
+##                                  
+##  time-server
+##  
+##########################################
+
+external_components:
+  source:
+    type: git
+    url: https://github.com/RobertJN64/ESPHome-NTP-Server
+  refresh: 30s
+  components: [ ntp_server, ntp_server_info, time ]
+
+uart:
+  tx_pin: $GPS_TX
+  rx_pin: $GPS_RX
+  baud_rate: 9600 #38400 #9600
+  id: gps1
+  
+logger:
+   baud_rate: 0
+
+ntp_server:
+
+gps:
+  latitude:
+    name: "Latitude"
+  longitude:
+    name: "Longitude"
+  altitude:
+    name: "Altitude"
+  satellites:
+    name: "Satellites"
+  speed:
+    name: "Speed"
+    accuracy_decimals: 1
+  course: 
+    name: "Course"
+  uart_id: gps1
+
+text_sensor:
+  - platform: ntp_server_info
+    time:
+      name: "NTP Info"
+
+
+sensor:
+  - platform: qmc5883l
+    address: 0x0D
+    field_strength_x:
+      name: "QMC5883L Field Strength X"
+    field_strength_y:
+      name: "QMC5883L Field Strength Y"
+    field_strength_z:
+      name: "QMC5883L Field Strength Z"
+    heading:
+      name: "QMC5883L Heading"
+    temperature:
+      name: "QMC5883L Temperature"
+      filters:
+        - offset: 34.0
+    range: 200uT
+    oversampling: 512x
+    update_interval: 60s
+
+time:
+  - platform: gps
+  - platform: sntp
+    servers: !secret sntp
+    timezone: UTC-3
+
+    

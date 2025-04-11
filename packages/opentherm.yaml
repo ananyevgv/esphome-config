@@ -1,0 +1,373 @@
+#-------------------------------------------
+# OPENTHERM
+#-------------------------------------------
+opentherm:
+  in_pin: $in #42 
+  out_pin: $out #41 
+  ch_enable: true
+  ch2_active: true
+  dhw_enable: true
+  otc_active: false
+  
+#-------------------------------------------
+# NUMBER
+#-------------------------------------------
+number:
+  - platform: opentherm
+    #t_set:
+    #  name: Boiler Setpoint
+    #  min_value: 18
+     # auto_max_value: true
+    t_set_ch2:
+      name: "${last_name} Setpoint2"
+      min_value: 18
+      auto_max_value: true 
+    t_dhw_set: 
+      id: dhw_num
+      name: "${last_name}Hot water setpoint"
+      auto_min_value: true
+      auto_max_value: true 
+    max_t_set: 
+      name: "${last_name}Maximum allowable CH water setpoint"
+      auto_min_value: true
+      auto_max_value: true 
+    t_room_set: 
+      name: "${last_name} Current room temperature setpoint (informational)"
+    t_room_set_ch2:
+      name: "${last_name} Current room temperature setpoint on CH2 (informational)"
+    t_room: 
+      name: "${last_name} Current sensed room temperature (informational)"
+    max_rel_mod_level: 
+      name: Maximum relative modulation level
+    otc_hc_ratio: 
+      name: "${last_name} OTC heat curve ratio"
+      auto_min_value: true
+      auto_max_value: true 
+
+  - platform: template
+    name: "${last_name} Counter"
+    min_value: 0
+    max_value: 255
+    id: counter
+    update_interval: 30s                          
+    step: 0
+    optimistic: true 
+    initial_value: 0
+    internal: true
+    
+#-------------------------------------------
+# SWITCH
+#-------------------------------------------
+switch:
+  - platform: opentherm
+    ch_enable:
+      name: "${last_name} Central Heating enabled"
+      id: ch_enabled
+    dhw_enable: 
+      name: "${last_name} Domestic Hot Water enabled"
+    otc_active: 
+      name: "${last_name} temperature compensation active"
+    ch2_active: 
+      name: "${last_name} ECO"
+    summer_mode_active: 
+      name: "${last_name} Summer mode active"
+    dhw_block: 
+      name: "${last_name} Block DHW"
+      
+#-------------------------------------------
+# BINARY SENSOR
+#-------------------------------------------
+binary_sensor:
+  - platform: opentherm
+    fault_indication:
+      name: "${last_name} Fault"
+      entity_category: diagnostic
+    ch_active:
+      name: "${last_name} Central Heating active"
+    dhw_active:
+      name: "${last_name} Hot Water active"
+    flame_on:
+      name: "${last_name} Flame on"
+      id: flame
+      on_press:
+        then:
+          - sensor.template.publish:                                                                                                                                           
+              id: boiler_on                                                                                                                                             
+              state: !lambda 'return id(sntp_time).now().timestamp;'
+      on_release:
+        then:
+          - number.set:
+              id: counter
+              value: !lambda |-
+                return ((id(counter).state)+1);
+          - sensor.template.publish:                                                                                                                                                                                                                                                                              
+              id: boiler_off                                                                                                                                               
+              state: !lambda 'return id(sntp_time).now().timestamp;' 
+    cooling_active: 
+      name: "${last_name} Status: Cooling active"
+    ch2_active:
+      name: "${last_name} Central Heating2 active"
+    diagnostic_indication:
+      name: "${last_name} Diagnostic"
+      entity_category: diagnostic
+    electricity_production: 
+      name: "${last_name} Status: Electricity production"
+    dhw_present:
+      name: "${last_name} DHW present"
+    control_type_on_off:
+      name: "${last_name} Control type is on/off"
+    cooling_supported:
+      name: "${last_name} Cooling supported"
+    dhw_storage_tank:
+      name: "${last_name} DHW storage tank"
+    controller_pump_control_allowed:
+      name: "${last_name} Controller pump control allowed"
+    ch2_present:
+     name:  "${last_name} CH2 present"
+    dhw_setpoint_transfer_enabled:
+     name:  "${last_name} Remote boiler parameters: DHW setpoint transfer enabled"
+    max_ch_setpoint_transfer_enabled:
+      name: "${last_name} Remote boiler parameters: CH maximum setpoint transfer enabled"
+    dhw_setpoint_rw:
+     name:  "${last_name} Remote boiler parameters: DHW setpoint read/write"
+    max_ch_setpoint_rw:
+      name: "${last_name} Remote boiler parameters: CH maximum setpoint read/write"
+    service_request: 
+      name: "${last_name} Service required"
+    lockout_reset: 
+      name: "${last_name} Lockout Reset"
+    low_water_pressure: 
+      name: "${last_name} Low water pressure fault"
+    flame_fault: 
+      name: "${last_name} Flame fault"
+    air_pressure_fault: 
+      name: "${last_name} Air pressure fault"
+    water_over_temp: 
+      name: "${last_name} Water overtemperature"
+
+#-------------------------------------------
+# SENSOR
+#-------------------------------------------
+sensor:
+  - platform: opentherm
+    rel_mod_level:
+      name: "${last_name} Relative modulation level"
+      id: modulation
+    ch_pressure: 
+      name: "${last_name} Water pressure in CH circuit"
+    dhw_flow_rate: 
+      name: "${last_name} Water flow rate in DHW circuit"
+    t_boiler:
+      id: t_boiler
+      name: "${last_name} Feed Temperature"
+    t_dhw:
+      id: t_dhw
+      name: "${last_name} dhw Temperature"
+    t_outside:
+       name: "${last_name} Outside temperature"
+    t_ret:
+      id: t_ret
+      name: "${last_name} Return Temperature"
+    t_storage: 
+      name: "${last_name} Solar storage temperature"
+    t_collector: 
+      name: "${last_name} Solar collector temperature"
+    t_flow_ch2: 
+      name: "${last_name} Flow water temperature CH2 circuit"
+    t_dhw2: 
+      name: "${last_name} Domestic hot water temperature 2"
+    t_exhaust: 
+      name: "${last_name} exhaust temperature"
+    fan_speed: 
+      name: "${last_name} fan speed (RPM)"
+    fan_speed_setpoint: 
+      name: "${last_name} Boiler fan speed setpoint"
+    flame_current: 
+      name: "${last_name} flame current (µA)"
+    burner_starts: 
+      name: "${last_name} Number of starts burner"
+    ch_pump_starts: 
+      name: "${last_name} Number of starts CH pump"
+    dhw_pump_valve_starts: 
+      name: "${last_name} Number of starts DHW pump/valve"
+    dhw_burner_starts: 
+      name: "${last_name} Number of starts burner during DHW mode"
+    burner_operation_hours: 
+      name: "${last_name} Number of hours that burner is in operation"
+    ch_pump_operation_hours: 
+      name: "${last_name} Number of hours that CH pump has been running"
+    dhw_pump_valve_operation_hours: 
+      name: "${last_name} Number of hours that DHW pump has been running or DHW valve has been opened"
+    dhw_burner_operation_hours: 
+      name: "${last_name} Number of hours that burner is in operation during DHW mode"
+    t_dhw_set_ub: 
+      name: "${last_name} Upper bound for adjustment of DHW setpoint"
+    t_dhw_set_lb: 
+      name: "${last_name} Lower bound for adjustment of DHW setpoint"
+    max_t_set_ub: 
+      name: "${last_name} Upper bound for adjustment of max CH setpoint"
+    max_t_set_lb: 
+      name: "${last_name} Lower bound for adjustment of max CH setpoint"
+    t_dhw_set: 
+      name: "${last_name} Domestic hot water temperature setpoint"
+    max_t_set: 
+      name: "${last_name} Maximum allowable CH water setpoint"
+    oem_fault_code: 
+      name: "${last_name} OEM fault code"
+      id: oem_error
+    oem_diagnostic_code: 
+      name: "${last_name} OEM diagnostic code"
+    max_capacity: 
+      name: "${last_name} Maximum boiler capacity (KW)"
+    min_mod_level:
+      name: "${last_name} Minimum modulation level"
+    opentherm_version_device:
+      name: "${last_name} Version of OpenTherm implemented by slave"
+    device_type: 
+      name: "${last_name} Slave product type"
+    device_version: 
+      name: "${last_name} Slave product version"
+    device_id: 
+      name: "${last_name} Slave ID code"
+    otc_hc_ratio_ub: 
+      name: "${last_name} OTC heat curve ratio upper bound"
+    otc_hc_ratio_lb: 
+      name: "${last_name} OTC heat curve ratio lower bound"
+
+  - platform: template
+    name: "${last_name} time off"
+    device_class: timestamp
+    id: boiler_off
+    update_interval: never
+
+  - platform: template
+    name: "${last_name} time on"
+    device_class: timestamp
+    id: boiler_on
+    update_interval: never
+
+  - platform: template
+    name: "${last_name} working"
+    lambda: |-
+      return id(counter).state;
+    accuracy_decimals: 0
+    icon: mdi:counter
+
+  - platform: duty_time
+    id: boiler_work_time
+    name: "${last_name} Work Time"
+    sensor: flame
+    restore: false
+    last_time:
+      name: boiler Turn-On Time
+      id: boiler_turn_on_time
+
+
+  - platform: copy 
+    source_id: modulation
+    name: "${last_name} power"
+    filters:
+      - lambda: return (x * 0.244);
+    unit_of_measurement: "kW"
+    device_class: "power"
+    id: boiler_power
+
+  - platform: total_daily_energy
+    name: "${last_name} Total Daily Energy"
+    power_id: boiler_power
+    accuracy_decimals: 1
+
+  - platform: pid
+    name: "${last_name} PID результат"
+    type: RESULT    
+  - platform: pid
+    name: "${last_name} PID нагрев"
+    type: HEAT    
+  - platform: pid
+    name: "${last_name} PID ошибка"
+    type: ERROR    
+  - platform: pid
+    name: "${last_name} PID p"
+    type: PROPORTIONAL
+  - platform: pid
+    name: "${last_name} PID i"
+    type: INTEGRAL
+  - platform: pid
+    name: "${last_name} PID d"
+    type: DERIVATIVE
+
+
+
+  - platform: homeassistant
+    id: ch_pid_temperature
+    entity_id: $pid_temperature
+    filters:
+      # Push room temperature every second to update PID parameters
+      - heartbeat: 1s
+      
+#-------------------------------------------
+# TEXT SENSOR
+#-------------------------------------------
+text_sensor:
+  - platform: template
+    name: "${last_name} Ошибка котла"
+    icon: mdi:water-boiler-alert
+    lambda: |-
+      uint8_t var = (id(oem_error).state);
+      switch (var) {
+        case 0: return std::string("");
+        case 1: return std::string("E01 Отсутствие розжига");
+        case 2: return std::string("E02 Сработал защитный термостат от перегрева");
+        case 3: return std::string("E03 Сработал защитный датчик тяги");
+        case 4: return std::string("E04 Частый срыв пламени");        
+        case 5: return std::string("E05 Неисправность датчика отопления");
+        case 6: return std::string("E06 Неисправность датчика контура ГВС");
+        case 10: return std::string("E10 Неисправность датчика давления воды");
+        case 11: return std::string("E11 Неисправность открытия входа внешнего программируемого датчика температуры (= 04)");
+        case 12: return std::string("E12 Нет разрешения от дифференциального датчика гидравлического давления (прессостата)");
+        case 13: return std::string("E13 Залипание контактов дифференциального гидравлического прессостата");
+        case 18: return std::string("E18 Включено заполнение системы (замечание)");
+        case 19: return std::string("E19 Неисправность при заполнения системы");
+        case 25: return std::string("E25 Воздых в системе");
+        case 35: return std::string("E35 Паразитное пламя (ошибка пламени)");
+        case 80 ... 96: return std::string("E80-96 Ошибка сьемной панели)");
+        case 97: return std::string("E97 Неправильная частота сети электропитания)");
+        case 98: return std::string("E98 Проблема с контактами реле газового клапана, внутренняя ошибка");
+        case 99: return std::string("E99 Проблема котактов реле, внутренняя ошибка");
+        default: return std::string("Неизвестная ошибка");
+      } 
+
+#-------------------------------------------
+# OUTPUT
+#-------------------------------------------
+output:
+  - platform: opentherm
+    t_set:
+      id: t_set
+      min_value: 20
+      max_value: 65
+      zero_means_zero: true
+
+#-------------------------------------------
+# CLIMATE
+#-------------------------------------------
+climate:
+  - platform: pid
+    name: "Central heating"
+    id: pid_climate
+    heat_output: t_set
+    default_target_temperature: 20
+    sensor: ch_pid_temperature
+    control_parameters:
+      kp: 0.4
+      ki: 0.004
+  
+#-------------------------------------------
+# BUTTON
+#-------------------------------------------
+button:
+  - platform: template
+    name: "${last_name} PID автонастройка"
+    on_press:
+      - climate.pid.autotune: pid_climate 
+  

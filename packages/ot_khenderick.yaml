@@ -1,0 +1,398 @@
+#-------------------------------------------
+# OPENTHERM KHENDERICK 
+#-------------------------------------------
+
+esphome:
+  build_path: khenderick
+  on_boot:
+    then:
+      - delay: 2s
+      - switch.turn_on: ch_2_enabled
+      - switch.turn_on: dhw_enabled
+      - switch.turn_on: ch_enabled
+      - switch.turn_off: otc_active
+      - number.set:
+          id: dhw_num
+          value:  54
+          
+#-------------------------------------------
+# EXTERNAL COMPONENTS
+#-------------------------------------------
+external_components:
+  - source: github://ananyevgv/esphome-opentherm-khenderick #khenderick/esphome-opentherm
+    components: [opentherm]
+    refresh: 0s
+    
+#-------------------------------------------
+# OPENTHERM
+#-------------------------------------------
+opentherm:
+  read_pin: $ot_read
+  write_pin: $ot_write
+
+#-------------------------------------------
+# TEXT SENSOR
+#-------------------------------------------
+text_sensor:
+  - platform: template
+    name: "${last_name} Ошибка котла"
+    icon: mdi:water-boiler-alert
+    id: oshibka_kotla
+    lambda: |-
+      uint8_t var = (id(oem_error).state);
+      switch (var) {
+        case 0: return std::string("");
+        case 1: return std::string("E01 Отсутствие розжига");
+        case 2: return std::string("E02 Сработал защитный термостат от перегрева");
+        case 3: return std::string("E03 Сработал защитный датчик тяги");
+        case 4: return std::string("E04 Частый срыв пламени");        
+        case 5: return std::string("E05 Неисправность датчика отопления");
+        case 6: return std::string("E06 Неисправность датчика контура ГВС");
+        case 10: return std::string("E10 Неисправность датчика давления воды");
+        case 11: return std::string("E11 Неисправность открытия входа внешнего программируемого датчика температуры (= 04)");
+        case 12: return std::string("E12 Нет разрешения от дифференциального датчика гидравлического давления (прессостата)");
+        case 13: return std::string("E13 Залипание контактов дифференциального гидравлического прессостата");
+        case 18: return std::string("E18 Включено заполнение системы (замечание)");
+        case 19: return std::string("E19 Неисправность при заполнения системы");
+        case 25: return std::string("E25 Воздых в системе");
+        case 35: return std::string("E35 Паразитное пламя (ошибка пламени)");
+        case 80 ... 96: return std::string("E80-96 Ошибка сьемной панели)");
+        case 97: return std::string("E97 Неправильная частота сети электропитания)");
+        case 98: return std::string("E98 Проблема с контактами реле газового клапана, внутренняя ошибка");
+        case 99: return std::string("E99 Проблема котактов реле, внутренняя ошибка");
+        default: return std::string("Неизвестная ошибка");
+      } 
+      
+#-------------------------------------------
+# SENSOR
+#-------------------------------------------
+sensor:
+  - platform: opentherm
+    otc_ratio_max:
+      name: "${last_name} otc ratio max"
+    otc_ratio_min:
+      name: "${last_name} otc ratio min"
+    ch_min_temperature:
+      name: "${last_name} CH minimum temperature"
+    ch_max_temperature:
+      name: "${last_name} CH maximum temperature"
+    dhw_min_temperature:
+      name: "${last_name} DHW minimum temperature"
+    dhw_max_temperature:
+      name: "${last_name} DHW maximum temperature"
+    dhw_flow_rate:
+      name: "${last_name} DHW flow rate"
+    pressure:
+      name: "${last_name} pressure"
+    modulation:
+      name: "${last_name} modulation"
+      id: modulation
+    dhw_temperature:
+      name: "${last_name} DHW temperature"
+    boiler_temperature:
+      name: "${last_name} boiler temperature"
+    return_temperature:
+       name: "${last_name} return temperature"
+    outside_temperature:
+      name: "${last_name} outside temperature"
+    exhaust_temperature:
+       name: "${last_name} exhaust temperature"
+    oem_error_code:
+      name: "${last_name} OEM error code"
+      id: oem_error
+      icon: mdi:water-boiler-alert
+      
+    oem_diagnostic_code:
+      name: "${last_name} OEM diagnostic code"
+    burner_starts:
+      name: "${last_name} burner starts"
+    burner_ops_hours:
+      name: "${last_name} burner operation hours"
+    ch_pump_starts:
+      name: "${last_name} CH pump starts"
+    ch_pump_ops_hours:
+      name: "${last_name} CH pump operation hours"
+    dhw_pump_valve_starts:
+      name: "${last_name} DHW pump/valve starts"
+    dhw_pump_valve_ops_hours:
+      name: "${last_name} DHW pump/valve operation hours"
+    dhw_burner_starts:
+      name: "${last_name} DHW burner starts"
+    dhw_burner_ops_hours:
+      name: "${last_name} DHW burner operation hours"
+    boiler_member_id:
+      name: "${last_name} Boiler member ID"
+      
+      
+
+      
+  - platform: copy 
+    source_id: modulation
+    name: "${last_name} power"
+    filters:
+      - lambda: return (x * 0.244);
+    unit_of_measurement: "kW"
+    device_class: "power"
+    id: boiler_power
+
+
+  - platform: total_daily_energy
+    name: "${last_name} Total Daily Energy"
+    power_id: boiler_power
+    accuracy_decimals: 1
+
+
+  - platform: template
+    name: "time boiler off"
+    device_class: timestamp
+    id: boiler_off
+    update_interval: never
+
+  - platform: template
+    name: "time boiler on"
+    device_class: timestamp
+    id: boiler_on
+    update_interval: never
+
+  - platform: template
+    name: "boiler working"
+    lambda: |-
+      return id(counter).state;
+    accuracy_decimals: 0
+    icon: mdi:counter
+
+  - platform: duty_time
+    id: boiler_work_time
+    name: boiler Work Time
+    sensor: flame
+    restore: false
+    last_time:
+      name: boiler Turn-On Time
+      id: boiler_turn_on_time
+
+  - platform: pid
+    name: "${last_name} PID результат"
+    type: RESULT    
+  - platform: pid
+    name: "${last_name} PID нагрев"
+    type: HEAT    
+  - platform: pid
+    name: "${last_name} PID ошибка"
+    type: ERROR    
+  - platform: pid
+    name: "${last_name} PID p"
+    type: PROPORTIONAL
+  - platform: pid
+    name: "${last_name} PID i"
+    type: INTEGRAL
+  - platform: pid
+    name: "${last_name} PID d"
+    type: DERIVATIVE
+
+
+  - platform: homeassistant
+    id: ch_pid_temperature
+    entity_id: $pid_temperature
+    filters:
+      # Push room temperature every second to update PID parameters
+      - heartbeat: 1s
+      
+      
+#-------------------------------------------
+# BUTTON
+#-------------------------------------------
+button:
+  - platform: opentherm
+    boiler_lo_reset:
+      name: "${last_name} Boiler lock-out reset"
+    ch_water_filling:
+      name: "${last_name} CH water filling"   
+  - platform: template
+    name: "${last_name} PID автонастройка"
+    on_press:
+      - climate.pid.autotune: pid_climate  
+
+#-------------------------------------------
+# SWITCH
+#-------------------------------------------
+switch:
+  - platform: opentherm
+    ch_enabled:
+      name: "${last_name} CH enabled"
+      icon: mdi:radiator
+      id: ch_enabled
+    ch_2_enabled:
+      name: "${last_name} ECO enabled"
+      icon: mdi:sprout
+      id: ch_2_enabled
+    dhw_enabled:
+      name: "${last_name} DHW enabled"
+      icon: mdi:water-boiler
+      id: dhw_enabled
+    otc_active:
+      name: "${last_name} OTC active"
+      id: otc_active
+      
+#-------------------------------------------
+# NUMBER
+#-------------------------------------------
+number:
+  - platform: opentherm
+    ch_setpoint_temperature:
+      name: "${last_name} CH setpoint temperature"
+      min_value: 25.0
+      max_value: 85.0
+      step: 0.5
+      restore_value: true
+      id: ch_num
+    dhw_setpoint_temperature:
+      name: "${last_name} DHW setpoint temperature"
+      min_value: 35.0
+      max_value: 60.0
+      step: 1
+      restore_value: true
+      id: dhw_num
+    otc_set_ratio:
+      name: "${last_name} OTC set ratio"
+      step: 1
+      min_value: 0.0
+      max_value: 100.0
+      restore_value: true
+    max_modulation:
+      name: "Max modulation level"
+      min_value: 0.0
+      max_value: 100.0
+      step: 0.5
+      restore_value: true
+  - platform: template
+    name: ${name} Counter
+    id: counter
+    update_interval: 30s
+    min_value: 0
+    max_value: 100                             
+    step: 0
+    optimistic: true 
+    initial_value: 0
+    internal: true
+
+#-------------------------------------------
+# BINARY SENSOR
+#-------------------------------------------
+binary_sensor:
+  - platform: opentherm
+    ch_active:
+      name: "${last_name} CH active"
+      icon: mdi:radiator
+    ch_2_active:
+      name: "${last_name} ECO"
+      icon: mdi:sprout
+    dhw_active:
+      name: "${last_name} DHW active"
+      icon: mdi:water-boiler
+    flame_active:
+      name: "${last_name} flame active"
+      icon: mdi:fire
+      id: flame
+      on_press:
+        then:
+          - sensor.template.publish:                                                                                                                                           
+              id: boiler_on                                                                                                                                                   
+              state: !lambda 'return id(sntp_time).now().timestamp;'
+      on_release:
+        then:
+          - number.set:
+              id: counter
+              value: !lambda |-
+                return ((id(counter).state)+1);
+          - sensor.template.publish:                                                                                                                                                                                                                                                                              
+              id: boiler_off                                                                                                                                                 
+              state: !lambda 'return id(sntp_time).now().timestamp;'     
+    fault:
+      name: "${last_name} fault"
+      icon: mdi:water-boiler-alert
+    diagnostic:
+      name: "${last_name} diagnostic"
+      icon: mdi:face-agent
+    service_request:
+      name: "${last_name} service request"
+      icon: mdi:account-wrench
+    lockout_reset:
+      name: "${last_name} lockout reset"
+      icon: mdi:lock-reset
+    water_pressure_fault:
+      name: "${last_name} water pressure fault"
+      icon: mdi:gauge-empty
+    gas_flame_fault:
+      name: "${last_name} gas/flame fault"
+      icon: mdi:gas-burner
+    air_pressure_fault:
+      name: "${last_name} air pressure fault"
+      icon: mdi:cloud-alert-outline
+    water_over_temperature_fault:
+      name: "${last_name} water over temperature fault"
+      icon: mdi:coolant-temperature
+    dhw_present:
+      name: "${last_name} DHW present" # (= true, not present = false)
+    modulating:
+      name: "${last_name} boiler uses modulating" # (= true, on/off = false)
+    cooling_supported:
+      name: "${last_name} cooling supported" # (= true, unsupported = false)
+    dhw_storage_tank:
+      name: "${last_name} DHW storage tank" # (= true, instantaneous/unsupported = false)
+    device_lowoff_pump_control:
+      name: "${last_name} device low-off/pump control allowed" # (= true, not allowed = false)
+    ch_2_present:
+      name: "${last_name} CH 2 present" # (= true, not present = false)
+
+#-------------------------------------------
+# OUTPUT
+#-------------------------------------------
+output:
+  - platform: template
+    id: pid_output
+    type: float
+    #min_power: 0.25
+    #max_power: 0.75
+    #zero_means_zero: true
+    write_action:
+      - number.set:
+          id: ch_num
+          value:  !lambda return (state);
+     
+#-------------------------------------------
+# CLIMATE
+#-------------------------------------------     
+climate:
+  - platform: pid
+    id: pid_climate
+    name: "${last_name} PID"
+    sensor: ch_pid_temperature
+    default_target_temperature: 24°C
+    heat_output: pid_output
+    visual:
+      min_temperature: 20
+      max_temperature: 30
+      temperature_step:
+        target_temperature: 0.5
+        current_temperature: 0.1
+    control_parameters:
+      kp: 0.0
+      ki: 0.0
+      kd: 0.0
+   
+#-------------------------------------------
+# TIME
+#-------------------------------------------
+time:
+  - platform: sntp
+    on_time: 
+      - hours: 0
+        minutes: 0
+        seconds: 0
+        then:
+          - number.set:
+              id: counter
+              value: 0
+      
+      
+

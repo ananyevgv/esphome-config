@@ -1,0 +1,55 @@
+substitutions:
+  # VACUUM
+  vacuumbot:            vacuum.dreamebot_l10s_pro
+  vacuum_sensor:        sensor.vacuum_sensor
+  vacuum_mode:          select.dreamebot_l10s_pro_cleaning_mode
+  vacuum_fan:           select.dreamebot_l10s_pro_suction_level
+  arrow_up:          "\U000F0360"
+  arrow_down:        "\U000F035D"
+
+logger: 
+
+http_request:
+  verify_ssl: false
+  timeout: 10s
+  buffer_size_rx: 256
+  buffer_size_tx: 256
+#-------------------------------------------
+# ONLINE IMAGE
+#-------------------------------------------
+online_image:
+  - url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png"
+    format:          PNG
+    #resize:          180x148
+    id:              img_vacuum_snap_on
+    type:            RGB565
+    #buffer_size:     256
+    #use_transparency: true
+    #transparency: alpha_channel
+    on_download_finished:
+      - logger.log:  "Download vacuumimage finished"
+      - component.update: my_display
+    on_error:
+      - logger.log:  "Not download vacuumimage"
+wifi:  
+  on_connect:
+    - component.update: img_vacuum_snap_on
+#-------------------------------------------
+# LVGL
+#-------------------------------------------
+lvgl:
+  pages:
+    #-------------------------------------------
+    # PAGE 3 - VACUUM
+    #-------------------------------------------      
+    - id: page_3
+      width: 100%
+      bg_color: 0x000000
+      bg_opa: cover
+      widgets:
+        - image:
+
+            align: CENTER
+            src: img_vacuum_snap_on
+            
+            

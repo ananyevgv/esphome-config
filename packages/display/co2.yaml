@@ -1,61 +1,70 @@
+substitutions:
+  co2_icon: "\U000F07E4" # mdi:molecule-co2
+font:
+  - file: 'font/materialdesignicons-webfont.ttf' # http://materialdesignicons.com/cdn/7.4.47/ 
+    id: co2_36
+    size: 48
+    bpp: 4
+    glyphs: [
+      $co2_icon
+    ]  
 #-------------------------------------------
 # IMAGE
 #-------------------------------------------
-image:
-  - file: "picture/sun-UV.png"
-    id: sun_uv
-    resize: 60x60
-    type: RGB565 
+#image:
+#  - file: "picture/co2.png"
+ #   id: sun_co2
+ #   resize: 60x60
+ #   type: RGB565 
 #-------------------------------------------
 # SENSOR
 #-------------------------------------------    
 sensor:
   - platform: homeassistant
-    id: uv_index
-    entity_id: $sensor_uv_index
+    id: co2
+    entity_id: $sensor_co2
     on_value:
       then:
         - lvgl.label.update:
-            id: uv_index_text
+            id: co2_index_text
             text: 
               format: " %.0f"
-              args: ["id(uv_index).state"]
+              args: ["id(co2).state"]
 
         - lvgl.indicator.update:
-            id: uv_meter
+            id: co2_meter
             value: !lambda |- 
               return x;
         - lambda: |-
-            uint8_t vuv= (id(uv_index).state);
-              switch (vuv) {
-                case 0 ... 2: return id(uv_class).publish_state("низкий");
-                case 3 ... 5: return id(uv_class).publish_state("умеренный");
-                case 6 ... 7: return id(uv_class).publish_state("высокий");
-                case 8 ... 10: return id(uv_class).publish_state("очень высокий");
-                case 11 ... 13: return id(uv_class).publish_state("экстремальный");
-                default: return id(uv_class).publish_state("n/a");
+            uint16_t vco2= (id(co2).state);
+              switch (vco2) {
+                case 0 ... 500: return id(co2_class).publish_state("Отлично");
+                case 501 ... 1000: return id(co2_class).publish_state("Хорошо");
+                case 1001 ... 1500: return id(co2_class).publish_state("Слегка загрязненный");
+                case 1501 ... 2000: return id(co2_class).publish_state("Загрязненный");
+                case 2001 ... 5000: return id(co2_class).publish_state("Сильно загрязненный");
+                default: return id(co2_class).publish_state("n/a");
               }
+    
 #-------------------------------------------
 # TEXT SENSOR
 #-------------------------------------------
-text_sensor:             
+text_sensor:
   - platform: template
-    id: uv_class
+    id: co2_class
     on_value:
       then:
          - lvgl.label.update:
-            id: display_uv_class
+            id: display_co2_class
             text: !lambda |- 
-              return x;            
-
-
+              return x; 
 #-------------------------------------------
 # LVGL
 #-------------------------------------------
 lvgl:
   pages:
 # Вывод на экран 
-    - id: UV_page
+    - id: co2_page
       #width: 100%
       bg_color: 0x000000
       #opa: cover
@@ -65,43 +74,73 @@ lvgl:
         # Зеленый
         - line:
             points:
-              - 170, 170
-              - -70, 410
-            line_width: 200
+              - 284, 304
+              - -10, 500
+            line_width: 150
             line_color: 0x00ff00
             line_rounded: false 
+        - line:
+            points:
+              - 220, 200
+              - -30, 365
+            line_width: 100
+            line_color: 0x00ff00
+            line_rounded: false
+            
         # Желтый
         - line:
             points:
-              - 0, 120
-              - 240, 120
-            line_width: 250
-            line_color:  0xe7c12c
+              - 220, 185
+              - -30, 270
+            line_width: 110
+            line_color: 0xe7c12c
             line_rounded: false 
+            
         # Оранжевый
         - line:
             points:
-              - 160, 110
-              - 480, -100
-            line_width: 300
+              - 90, 220
+              - 120, 0
+            line_width: 250
             line_color: 0xffa500
-            line_rounded: false 
+            line_rounded: false    
+            
         # Красный
         - line:
             points:
-              - 325, 295
-              - 520, 10 #+5 -5
-            line_width: 220
+              - 170, 110
+              - 480, -80
+            line_width: 300
             line_color: 0xF50F34
+            line_rounded: false 
+            
+         # Фиолетовый
+        - line:
+            points:
+              - 310, 240
+              - 310, 0
+            line_width: 140
+            line_color: 0xA63DC2
+            line_rounded: false 
+            
+         # Фиолетовый
+        - line:
+            points:
+              - 330, 295
+              - 482, 0 #+5 -5
+            line_width: 220
+            line_color: 0xA63DC2
             line_rounded: false 
          # Фиолетовый
         - line:
             points:
-              - 240, 365
-              - 480, 365
-            line_color: 0xA63DC2 #0x9412FD
+              - 360, 220
+              - 390, 480
+            line_color: 0xA63DC2
             line_width: 240
             line_rounded: false
+      
+  
          # Черный
         - line:
             points:
@@ -126,12 +165,12 @@ lvgl:
             align: center
             scales:
               - ticks: 
-                  count: 27
+                  count: 101
                   width: 2
                   length: 10
                   color: 0x000000
                   major:
-                    stride: 2
+                    stride: 10
                     width: 3
                     length: 20
                     color: 0x000000
@@ -139,7 +178,7 @@ lvgl:
                 angle_range: 270
                 rotation: 135
                 range_from: 0
-                range_to: 13
+                range_to: 100
 # Индикатор
         - meter:
             width: 200
@@ -148,7 +187,7 @@ lvgl:
             scales:
               - indicators:
                   - line:
-                      id: uv_meter
+                      id: co2_meter
                       width: 4
                       color: 0xFF0000
                       r_mod: -15
@@ -156,14 +195,14 @@ lvgl:
                 angle_range: 270
                 rotation: 135
                 range_from: 0
-                range_to: 13
+                range_to: 5000
                 ticks: 
-                  count: 14
+                  count: 101
                   width: 0
                   length: 0
                   color: 0x000000
                   major:
-                    stride: 1
+                    stride: 10
                     width: 0
                     length: 0
                     color: 0x000000
@@ -176,7 +215,7 @@ lvgl:
            width: 40
            height: 25         
         - label:
-            id: uv_index_text
+            id: co2_index_text
             text: "--"
             text_color: color_violet
             align: CENTER
@@ -193,20 +232,25 @@ lvgl:
             indicator:
               arc_width: 3
               arc_color: 0x000000
+              
+
         - label:
+            id: display_co2_class
             text_color: color_white
-            text: Уровень ультрафиолета
-            text_font: roboto36
-            align: TOP_MID 
-        - label:
-            id: display_uv_class
-            text_color: color_white
+            text: "Качество воздуха"
             text_font: roboto36
             align: TOP_MID 
             y: 50
-        - image:
-            align: CENTER
-            src: sun_uv
-            y: 180
-            bg_color: 0xFFFFFF
-            bg_image_opa: 100% 
+        - label:
+            text: $co2_icon
+            text_color: color_white
+            text_font: co2_36
+            align: BOTTOM_MID
+            y: -40
+            
+     #   - image:
+      #      align: CENTER
+      #      src: co2
+     #       y: 180
+      #      bg_color: 0xFFFFFF
+        #    bg_image_opa: 100% 

@@ -1,1 +1,21 @@
+#-------------------------------------------
+# SENSOR AHTxx
+#-------------------------------------------
+sensor:
+  - platform: aht10
+    variant: ${var}
+    temperature:
+      name: "${name} temperature"
+      id: ${id_aht_t}
+      filters:
+        - median:
+    humidity:
+      name: "${name} humidity"
+      id: ${id_aht_h}
+    update_interval: 60s
+    address: 0x38
 
+  - platform: absolute_humidity
+    name: "${name} Absolute Humidity"
+    temperature: ${id_aht_t}
+    humidity: ${id_aht_h}   

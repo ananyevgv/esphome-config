@@ -1,0 +1,92 @@
+#-------------------------------------------
+# SENSOR SCALE
+#------------------------------------------- 
+sensor:
+   - platform: xiaomi_miscale
+     mac_address: 'E7:F4:41:C0:8D:C3'
+     weight:
+       name: "Xiaomi Mi Scale Weight"
+       id: weight_miscale
+       on_value:
+         then:
+           - lambda: |-
+               if (id(weight_miscale).state >= 100 && id(weight_miscale).state <= 135) {
+                 return id(weight_georgy).publish_state(x);}
+               else if (id(weight_miscale).state >= 65 && id(weight_miscale).state <= 71) {
+                 return id(weight_svetlana).publish_state(x);}
+               else if (id(weight_miscale).state >= 50 && id(weight_miscale).state <= 64.99) {
+                 return id(weight_ekaterina).publish_state(x);} 
+               else if (id(weight_miscale).state >= 10 && id(weight_miscale).state <= 45) {
+                 return id(weight_tatyana).publish_state(x);}
+
+     impedance:
+       name: "Xiaomi Mi Scale Impedance"
+       id: impedance_miscale
+       on_value:
+         then:
+           - lambda: |-
+               if (id(weight_miscale).state >= 100 && id(weight_miscale).state <= 125) {
+                 return id(impedance_georgy).publish_state(x);}
+               else if (id(weight_miscale).state >= 65 && id(weight_miscale).state <= 71) {
+                 return id(impedance_svetlana).publish_state(x);}
+               else if (id(weight_miscale).state >= 50 && id(weight_miscale).state <= 64.99) {
+                 return id(weight_ekaterina).publish_state(x);} 
+               else if (id(weight_miscale).state >= 10 && id(weight_miscale).state <= 45) {
+                 return id(impedance_tatyana).publish_state(x);}
+                 
+   - platform: template
+     name: Weight Georgy
+     id: weight_georgy
+     unit_of_measurement: 'kg'
+     icon: mdi:weight-kilogram
+     accuracy_decimals: 2
+
+
+   - platform: template
+     name: Weight Svetlana
+     id: weight_svetlana
+     unit_of_measurement: 'kg'
+     icon: mdi:weight-kilogram
+     accuracy_decimals: 2
+     
+   - platform: template
+     name: Weight Ekaterina
+     id: weight_ekaterina
+     unit_of_measurement: 'kg'
+     icon: mdi:weight-kilogram
+     accuracy_decimals: 2
+     
+   - platform: template
+     name: Weight Tatyana
+     id: weight_tatyana
+     unit_of_measurement: 'kg'
+     icon: mdi:weight-kilogram
+     accuracy_decimals: 2
+    
+   - platform: template
+     name: Impedance Georgy
+     id: impedance_georgy
+     unit_of_measurement: 'Ω'
+     icon: mdi:omega
+     accuracy_decimals: 0
+     
+   - platform: template
+     name: Impedance Svetlana
+     id: impedance_svetlana
+     unit_of_measurement: 'Ω'
+     icon: mdi:omega
+     accuracy_decimals: 0
+
+   - platform: template
+     name: Impedance Ekaterina
+     id: impedance_ekaterina
+     unit_of_measurement: 'Ω'
+     icon: mdi:omega
+     accuracy_decimals: 0
+     
+   - platform: template
+     name: Impedance Tatyana
+     id: impedance_tatyana
+     unit_of_measurement: 'Ω'
+     icon: mdi:omega
+     accuracy_decimals: 0

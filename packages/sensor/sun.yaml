@@ -1,0 +1,34 @@
+#-------------------------------------------
+# SUN 
+#------------------------------------------- 
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude
+  
+#-------------------------------------------
+# SENSOR 
+#------------------------------------------- 
+sensor:
+  - platform: sun
+    name: "${name} Elevation" 
+    disabled_by_default: true
+    type: elevation
+    id: elevation 
+
+  - platform: sun
+    name: "${name} Sun Azimuth" 
+    disabled_by_default: true
+    type: azimuth
+    
+#-------------------------------------------
+# TEXT SENSOR 
+#------------------------------------------- 
+text_sensor:
+  - platform: sun
+    name: "${name} Sun Next Sunrise"
+    disabled_by_default: true
+    type: sunrise
+  - platform: sun
+    name: "${name} Sun Next Sunset"
+    disabled_by_default: true
+    type: sunset

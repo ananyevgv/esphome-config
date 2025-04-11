@@ -1,0 +1,46 @@
+#-------------------------------------------
+# UART
+#------------------------------------------- 
+uart:
+  tx_pin: 1
+  rx_pin: 3
+  baud_rate: 9600
+  id: pzem
+  
+#-------------------------------------------
+# MODBUS
+#------------------------------------------- 
+modbus:
+
+#-------------------------------------------
+# SENSOR 
+#------------------------------------------- 
+sensor:
+  - platform: pzemac
+    current:
+      name: "{name} Current"
+    voltage: 
+      name: "{name} Voltage"
+    energy:
+      name: "{name} Energy"
+      filters:
+        - lambda: return x * 0.001 + 41339;
+      unit_of_measurement: "kWh"
+    power:
+      name: "{name} Power"
+    frequency:
+      name: "{name} Frequency"
+    power_factor:
+      name: "{name} Power Factor"
+    update_interval: 60s
+    id: PZEM
+    
+#-------------------------------------------
+# BUTTON
+#------------------------------------------- 
+button:
+  - platform: template
+    name: "${name} Reset Power PZEM"
+    icon: mdi:file-rotate-left-outline
+    on_press:
+      - pzemac.reset_energy: PZEM

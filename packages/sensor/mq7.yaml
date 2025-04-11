@@ -1,4 +1,18 @@
 #-------------------------------------------
+# Add yaml and copy file esphome/packages/sensor/
+#packages:
+#  mq: !include 
+#    file: packages/sensor/mq7.yaml
+#    vars:
+#      MQPin: A0
+#      GPIO_Close_gas: D7
+#      RationClearAir: 27.5
+#      R2PCB: 10
+#      MQBinarry: D8
+#      Voltage_Resolution: 3.3
+#-------------------------------------------
+
+#-------------------------------------------
 # EXTERNAL COMPONENT
 #-------------------------------------------
 external_components:

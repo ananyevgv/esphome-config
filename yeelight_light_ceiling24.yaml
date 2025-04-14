@@ -1,0 +1,75 @@
+# configuration based on:
+# - https://github.com/syssi/esphome-yeelight-ceiling-light/blob/main/yeelight_light_ceiling15.yaml
+
+substitutions:
+  name: yeelight-light-ceiling24
+  device_description: Люстра
+  
+esphome:
+  name: ${name}
+
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_FREERTOS_UNICORE: y
+    advanced:
+      ignore_efuse_mac_crc: true
+      ignore_efuse_custom_mac: true
+
+#-------------------------------------------
+# Packages
+#------------------------------------------- 
+packages:
+  ble: !include packages/ble.yaml
+  wifi: !include packages/wifi.yaml
+  device_base: !include packages/device_base.yaml
+  time: !include included/time.yaml 
+  
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude
+
+external_components:
+  - source: github://mdvorak/esphome-adaptive-lighting #@v1
+    refresh: 0s
+
+adaptive_lighting:
+  - light_id: ceiling_light
+    name: "Adaptive Lighting"
+    cold_white_color_temperature: 6000 K
+    warm_white_color_temperature: 2700 K
+    sunrise_elevation: -15.0 deg
+    sunset_elevation: -15.0 deg
+
+sensor:
+  - platform: adc
+    pin: GPIO32
+    name: "${name} adc1"
+    attenuation: 12db
+  - platform: adc
+    pin: GPIO33
+    name: "${name} adc2"
+    attenuation: 12db
+
+output:
+  - platform: ledc
+    pin: GPIO19
+    id: output_warm
+  - platform: ledc
+    pin: GPIO21
+    id: output_cold
+
+
+light:
+  - platform: cwww
+    name: "${name} ceiling light"
+    id: ceiling_light
+    cold_white: output_cold
+    warm_white: output_warm
+    cold_white_color_temperature: 6500 K
+    warm_white_color_temperature: 2700 K
+    # disabling constant_brightness makes color temperature transition smooth without brightness dips
+    # constant_brightness: true
+    gamma_correct: 0

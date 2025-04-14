@@ -1,0 +1,140 @@
+#https://dzen.ru/a/ZCA53H60nU4YFfMt?ysclid=m3a85yrbkj416294983
+##########################################
+##               TYWE3S                 ##
+##  |RS|          |#|     |tx|  LED     ##
+##  |adc|         |#|     |rx|          ##
+##  |en|          |#|     | 5|          ##
+##  |16| button   |#|     | 4|          ##
+##  |14|          |#|     | 0|          ##
+##  |12|          |#|     | 2| relay USB##
+##  |13|          |#|     |15| relay AC ## 
+##  |3V|          |#|     |GN|          ##
+##########################################
+
+substitutions:
+  name: ekf-rce-1
+  friendly_name: Умный удлинитель
+
+esp8266:
+  board: esp01_1m
+
+esphome:
+  name: "${name}"
+  comment: "${friendly_name}"
+
+# Enable logging
+logger:
+   baud_rate: 0
+# Enable Home Assistant API бля
+api:
+  password: !secret api_pass
+#Включаем загрузку по воздуху
+ota:
+  password: !secret ota_pass
+  platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+i2c:
+   sda: 4 
+   scl: 5 
+   scan: true 
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${name} IP Address"
+      icon: mdi:ip
+    ssid:
+      name: "${name} SSID"
+      icon: mdi:access-point-network
+    mac_address:
+      name: "${name} Mac"
+      icon: mdi:lan
+
+sensor: 
+  - platform: wifi_signal
+    name: "${name} Wifi"
+    update_interval: 60s  
+    id: wifi_signal_db
+    entity_category: "diagnostic"
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "${name} WiFi Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
+    
+  - platform: ina226
+    address: 0x40
+    shunt_resistance: 0.1 ohm
+    max_current: 3.2A
+    # adc time used for both, Bus Voltage and Shunt Voltage
+    adc_time: 140us
+    adc_averaging: 128
+    update_interval: 60s
+    current:
+      name: "INA226 Current"
+    power:
+      name: "INA226 Power"
+    bus_voltage:
+      name: "INA226 Bus Voltage"
+    shunt_voltage:
+      name: "INA226 Shunt Voltage"
+
+switch:
+  - platform: gpio
+    name: "EKF switch AC"
+    pin: GPIO15
+    id: relay_AC
+    icon: mdi:power-socket-eu    
+    restore_mode: ALWAYS_ON
+  - platform: gpio
+    name: "EKF switch USB"
+    pin:
+      number: GPIO2
+      inverted: True
+    id: relay_USB
+    icon: mdi:usb-port
+    restore_mode: ALWAYS_ON
+    on_turn_on: 
+      - light.turn_on: usb_light
+    on_turn_off: 
+      - light.turn_off: usb_light  
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO16
+      mode:
+        input: true
+      inverted: true
+    name: "EKF button"
+    on_click:
+      - switch.toggle: relay_AC
+    on_double_click:
+      - switch.toggle: relay_USB
+
+light:
+  - platform: binary
+    name: "USB"
+    output: usb
+    id: usb_light
+    internal: true
+
+output:
+  - platform: gpio
+    pin: GPIO1
+    id: usb
+    inverted: true
+    
+button:
+  - platform: restart
+    name: "${name} Restart"
+
+
+    
+    

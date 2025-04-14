@@ -1,0 +1,111 @@
+substitutions:
+  name: hdmi
+  device_description: "hdmi"
+  GPIO_HDMI: D2
+
+esphome:
+  name: "${name}"
+  comment: "${device_description}"
+
+esp8266:
+  board: d1_mini
+  
+logger:
+
+# Enable Home Assistant API
+#-------------------------------------------
+# Packages
+#------------------------------------------- 
+packages:
+  wifi: !include packages/wifi.yaml
+  device_base: !include packages/device_base.yaml
+  web: !include included/web.yaml
+ # hdmi-cec: !include 
+  #  file: packages/hdmi_cec.yaml
+  #  vars:
+  #    GPIO_HDMI: D2
+
+
+i2c:
+  sda: D3
+  scl: D1
+  scan: true
+#-------------------------------------------
+# HDMI-CEC
+#------------------------------------------- 
+#https://github.com/Palakis/esphome-native-hdmi-cec
+#https://github.com/johnboiles/esphome-hdmi-cec
+external_components:
+  source: github://Palakis/esphome-hdmi-cec@feature/ddc-probing
+  refresh: 0s
+
+hdmi_cec:
+  pin: $GPIO_HDMI # Required
+  address: 0x04  #0-TV, 1-Recording-1, 2-Recording-2, 3-Tuner-1, 4-Playback-1, 5-Audio System, 6-Tuner-2, 7-Tuner-3, 8-Playback-2, 9-Playback-3, A-Tuner-4
+  physical_address: 0x1000 # Физический адрес устройства. В данном случае: 1.0.0.0 (HDMI1 на телевизоре)
+  osd_name: "ESPHOME" # # Имя, которое будет отображаться в списке устройств на вашем телевизоре/ресивере Defaults to "esphome"
+  monitor_mode: false # Optional. Defaults to false
+  on_message:
+    # Respond to "Menu Request" (not required, example purposes only)
+    - opcode: 0x8D
+      then:
+        hdmi_cec.send:
+          # both "destination" and "data" are templatable
+          destination: !lambda return source;
+          data: [0x8E, 0x01] # 0x01 => "Menu Deactivated"
+
+    - data: [0x8C] # Power status: On
+      then:
+        - logger.log: "Power state On"
+        - binary_sensor.template.publish:
+            id: tv_power
+            state: ON
+        - delay: 15s
+        - binary_sensor.template.publish:
+            id: tv_power
+            state: OFF
+
+button:
+  - platform: template
+    name: "TV Turn On"
+    on_press:
+      - hdmi_cec.send:
+          destination: 0x0
+          data: [ 0x04 ] #40:44:6d
+
+  - platform: template
+    name: "Turn TV off"
+    on_press:
+      hdmi_cec.send:
+        destination: 0x0 #0-TV, 1-Recording-1, 2-Recording-2, 3-Tuner-1, 4-Playback-1, 5-Audio System, 6-Tuner-2, 7-Tuner-3, 8-Playback-2, 9-Playback-3, A-Tuner-4
+        data: [ 0x44, 0x6c ]  
+
+  - platform: template
+    name: "Volume UP"
+    on_press:
+      - hdmi_cec.send:
+          destination: 0x0
+          data: [0x44, 0x41]  
+
+  - platform: template
+    name: "Volume Down"
+    on_press:
+      - hdmi_cec.send:
+          destination: 0x0
+          data: [0x44, 0x42]
+
+  - platform: template
+    name: "Mute"
+    on_press:
+      - hdmi_cec.send:
+          destination: 0x0
+          data: [0x44, 0x43] 
+
+binary_sensor:
+  - platform: template
+    id: tv_power
+    name: "TV On"   
+    device_class: power
+    publish_initial_state: true
+    filters:
+      - delayed_off: 3s

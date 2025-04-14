@@ -1,0 +1,117 @@
+substitutions:
+  name: shelly-rgb
+  device_description: shelly-rgb
+
+esphome:
+  name: "${name}"
+  comment: "${device_description}"
+
+esp8266:
+  board: esp01_1m
+  
+logger:
+# Enable Home Assistant API
+#-------------------------------------------
+# Packages
+#------------------------------------------- 
+packages:
+  wifi: !include packages/wifi.yaml
+  device_base: !include packages/device_base.yaml
+  time: !include included/time.yaml 
+  
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude
+
+external_components:
+  - source: github://mdvorak/esphome-adaptive-lighting #@v1
+    refresh: 0s
+
+adaptive_lighting:
+  - light_id: cw_light_l
+    name: "Adaptive Lighting Left"
+    cold_white_color_temperature: 6000 K
+    warm_white_color_temperature: 2700 K
+    sunrise_elevation: -15.0 deg
+    sunset_elevation: -15.0 deg
+  - light_id: cw_light_r
+    name: "Adaptive Lighting Right"
+    cold_white_color_temperature: 6000 K
+    warm_white_color_temperature: 2700 K
+    sunrise_elevation: -15.0 deg
+    sunset_elevation: -15.0 deg
+
+output:
+  - platform: esp8266_pwm
+    id: out_R
+    pin: GPIO12
+    frequency: 1000 Hz
+  - platform: esp8266_pwm
+    id: out_G
+    pin: GPIO15
+    frequency: 1000 Hz
+  - platform: esp8266_pwm
+    id: out_B
+    pin: GPIO14
+    frequency: 1000 Hz
+  - platform: esp8266_pwm
+    id: out_W
+    pin: GPIO4
+    frequency: 1000 Hz
+
+light:
+  - platform: cwww
+    id: cw_light_l
+    name: "Light left"
+    cold_white: out_R
+    warm_white: out_G
+    cold_white_color_temperature: 6500 K
+    warm_white_color_temperature: 2700 K
+    constant_brightness: true
+  - platform: cwww
+    id: cw_light_r
+    name: "Light right"
+    cold_white: out_B
+    warm_white: out_W
+    cold_white_color_temperature: 6500 K
+    warm_white_color_temperature: 2700 K
+    constant_brightness: true
+
+status_led:
+  pin: GPIO2
+
+sensor:
+  - platform: adc
+    pin: A0
+    name: "${name} adc"
+    update_interval: 1s
+    accuracy_decimals: 4
+    id: current_raw
+    #internal: true
+  - platform: template
+    name: "${name} Power"
+    unit_of_measurement: W
+    accuracy_decimals: 1
+    device_class: power
+    update_interval: 30s
+    id: led_power
+    lambda: return id(current_raw).state;
+    filters:
+      - calibrate_linear:
+        - 0.3984 -> 0.0
+        - 0.4043 -> 0.14
+        - 0.4053 -> 0.20
+      - multiply: 12 # 12V lamp
+  - platform: total_daily_energy
+    name: "${name} Total Daily Energy"
+    power_id: led_power
+    filters:
+          # Multiplication factor from W to kW is 0.001
+          - multiply: 0.001
+    unit_of_measurement: kW
+
+binary_sensor:
+  - platform: gpio
+    pin: GPIO5
+    name: "${name} test"
+    id: light_0_touch

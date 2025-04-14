@@ -1,0 +1,103 @@
+substitutions:
+  name: mi-desk-lamp
+  device_description: "Xiaomi Mi Desk Lamp (MJTD01YL)"
+
+esphome:
+  name: ${name}
+  comment: ${device_description}
+  min_version: 2024.6.0
+  project:
+    name: "syssi.esphome-mi-desk-lamp"
+    version: 1.0.0
+
+esp8266:
+  board: esp8285
+  
+#-------------------------------------------
+# PACKAGES
+#-------------------------------------------
+packages:
+  wifi: !include packages/wifi.yaml
+  device_base: !include packages/device_base.yaml
+  time: !include included/time.yaml 
+  
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude
+
+external_components:
+  - source: github://mdvorak/esphome-adaptive-lighting #@v1
+    refresh: 0s
+
+adaptive_lighting:
+  - light_id: ceiling_light
+    name: "Adaptive Lighting"
+    cold_white_color_temperature: 6000 K
+    warm_white_color_temperature: 2700 K
+    sunrise_elevation: -15.0 deg
+    sunset_elevation: -15.0 deg
+    restore_mode: ALWAYS_OFF
+    
+binary_sensor:
+  - platform: gpio
+    id: button_light
+    name: "${name} Button light"
+    pin:
+      number: GPIO2
+      inverted: true
+    on_click:
+      then:
+        - light.toggle: ceiling_light
+
+light:
+  - platform: cwww
+    id: ceiling_light
+    default_transition_length: 0s
+    constant_brightness: true
+    name: "${name} Light"
+    cold_white: output_cold
+    warm_white: output_warm
+    cold_white_color_temperature: 6500K
+    warm_white_color_temperature: 2700K
+    gamma_correct: 0
+
+output:
+  - platform: esp8266_pwm
+    pin: GPIO4
+    id: output_cold
+  - platform: esp8266_pwm
+    pin: GPIO5
+    id: output_warm
+
+sensor:
+  - platform: rotary_encoder
+    id: rotation
+    pin_a: GPIO13
+    pin_b: GPIO12
+    resolution: 2
+    on_value:
+      then:
+        - if:
+            condition:
+              # Check if Button is pressed while rotating
+              lambda: 'return id(button_light).state;'
+            then:
+              # If Button is pressed, change CW/WW
+              - lambda: |-
+                  auto min_temp = id(ceiling_light).get_traits().get_min_mireds();
+                  auto max_temp = id(ceiling_light).get_traits().get_max_mireds();
+                  auto cur_temp = id(ceiling_light).current_values.get_color_temperature();
+                  auto new_temp = max(min_temp, min(max_temp, cur_temp + (x * 10)));
+                  auto call = id(ceiling_light).turn_on();
+                  call.set_color_temperature(new_temp);
+                  call.perform();
+            else:
+              # If Button is not pressed, change brightness
+              - light.dim_relative:
+                  id: ceiling_light
+                  relative_brightness: !lambda |-
+                    return x / 25.0;
+        # Reset Rotation to 0
+        - sensor.rotary_encoder.set_value:
+            id: rotation
+            value: 0

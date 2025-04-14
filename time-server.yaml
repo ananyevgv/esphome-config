@@ -1,0 +1,54 @@
+##########################################
+##           WEMOS D1 mini              ##
+##  |RS|          |#|     | 1| txuart   ##
+##  |A0|          |#|     | 3| rxuart   ##
+##  |D0|          |#|     |D1| scl      ##
+##  |D5|          |#|     |D2| sda      ##
+##  |D6|          |#|     |D3|          ##
+##  |D7|          |#|     |D4|          ##
+##  |D8|          |#|     |GN|          ## 
+##  |3V|          |#|     |5V|          ##
+##########################################
+
+substitutions:
+  name: time_server
+  device_description: "Сервер точного времени"
+
+esphome:
+  name: "${name}"
+  comment: "${device_description}"
+esp32:
+ # board: esp32-s2-saola-1
+  board: lolin_s2_mini
+
+#esp8266:
+#  board: d1_mini
+api:
+  reboot_timeout: 0s
+i2c:
+   sda: 33 #D2
+   scl: 35 #D1
+   scan: true
+
+#-------------------------------------------
+# PACKAGES
+#-------------------------------------------
+packages:
+  wifi: !include packages/wifi.yaml
+  web: !include included/web.yaml
+  device_base: !include packages/device_base.yaml
+  time-server: !include 
+    file: packages/time-server.yaml
+    vars:
+      GPS_TX: 39  #1
+      GPS_RX: 37 #3
+
+
+
+
+
+
+
+
+
+    

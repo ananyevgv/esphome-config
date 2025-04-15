@@ -1,0 +1,90 @@
+#######################################
+##       ESP8684 ESP32C2             ##
+##  |EN|       |#|     |TX|          ## IO20
+##  | 0|       |#|     |RX|          ## IO19
+##  | 1|       |#|     |18|          ##
+##  | 2|       |#|     |10|          ##
+##  | 3|       |#|     | 7|          ##
+##  | 4|       |#|     | 6|          ##
+##  | 5|       |#|     |GN|          ## 
+##  |3V|       |#|     |5V|          ##
+#######################################
+
+#Pin Analog Analog Function 2
+#4 GPIO0 ADC1_CH0
+#5 GPIO1 ADC1_CH1 ADC1 channel … signa
+#6 GPIO2 ADC1_CH2
+#8 GPIO3 ADC1_CH3
+#9 GPIO4 ADC1_CH4
+
+substitutions:
+  name: "test"
+  device_description: "test"
+  
+esphome:
+  name: test
+
+esp32:
+  board: esp32-c2-devkitm-1
+  flash_size: 4MB
+  variant: esp32c2
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_XTAL_FREQ_26: y
+#-------------------------------------------
+# I2C
+#-------------------------------------------
+i2c:
+  sda: 10 #21
+  scl: 18 #22
+
+#https://github.com/esphome/issues/issues/6455
+external_components:
+  - source:    
+      type: git
+      url: https://github.com/leon-v/esphome
+      ref: adc_one_shot_C2
+    components: [ adc ]
+    refresh: 0s 
+    
+#-------------------------------------------
+# PACKAGES
+#-------------------------------------------
+packages:
+  wifi: !include packages/wifi.yaml
+ # web: !include included/web.yaml
+  device_base: !include packages/device_base.yaml
+  time: !include included/time.yaml
+  esp32_temp: !include packages/sensor/esp32_temp.yaml
+  cg_anem: !include 
+    file: packages/cg_anem.yaml
+    vars:
+      air_duct: 91.6 # 91.6 = расчитанное сечение воздуховода 108мм где стоит анемометр в метрах сантиметрах 122.71 для 125
+
+#-------------------------------------------
+# BUTTON
+#-------------------------------------------
+button:
+  - platform: restart
+    name: "${name} restart"
+sensor:
+  - platform: adc
+    pin: GPIO3
+    name: "ADC 2"
+    id: adc_2
+    update_interval: 60s
+
+light:
+  - platform: status_led
+    name: "Switch state"
+    pin: GPIO02
+
+web_server:
+  version: 3
+  port: 80
+  local: True
+  auth:
+    username: !secret web_user
+    password: !secret web_pass    
+    

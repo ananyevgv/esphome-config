@@ -1,0 +1,92 @@
+substitutions:
+  rx_pin: GPIO21
+  rx_pin2: GPIO22
+
+esphome:
+  name: sniffer
+  friendly_name: sniffer
+
+esp32:
+  board: wemos_d1_mini32
+
+# Enable logging
+logger:
+  level: VERBOSE
+  baud_rate: 0
+api:
+  password: !secret api_pass
+#Включаем загрузку по воздуху
+ota:
+  password: !secret ota_pass
+  platform: esphome
+  
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+uart:
+  - id: uart_0
+    baud_rate: 2400
+    rx_pin: ${rx_pin}
+    debug:
+      direction: RX
+      dummy_receiver: true
+
+      after:
+        delimiter: "\n"
+      sequence:
+        - lambda: UARTDebug::log_string(direction, bytes);
+   #   sequence:
+   #     - lambda: UARTDebug::log_hex(esphome::uart::UARTDirection::UART_DIRECTION_RX, bytes, ':');
+
+  - id: uart_1
+    baud_rate: 2400
+    rx_pin: ${rx_pin2}
+    debug:
+      direction: RX
+      dummy_receiver: true
+      after:
+        delimiter: "\n"
+      sequence:
+        - lambda: UARTDebug::log_string(direction, bytes);
+
+    #  sequence:
+     #   - lambda: UARTDebug::log_hex(esphome::uart::UARTDirection::UART_DIRECTION_TX, bytes, ':');
+
+select:
+  - id: change_baud_rate
+    name: Baud rate
+    platform: template
+    options:
+      - "300"
+      - "600"
+      - "1200"
+      - "2400"
+      - "9600"
+      - "38400"
+      - "57600"
+      - "115200"
+      - "256000"
+      - "512000"
+      - "921600"
+    initial_option: "115200"
+    optimistic: true
+    restore_value: True
+    internal: false
+    entity_category: config
+    icon: mdi:swap-horizontal
+    set_action:
+      - lambda: |-
+          id(uart_0).flush();
+          uint32_t new_baud_rate = stoi(x);
+          ESP_LOGD("change_baud_rate", "Changing baud rate from %i to %i",id(uart_0).get_baud_rate(), new_baud_rate);
+          if (id(uart_0).get_baud_rate() != new_baud_rate) {
+            id(uart_0).set_baud_rate(new_baud_rate);
+            id(uart_0).load_settings();
+          }
+          id(uart_1).flush();
+          ESP_LOGD("change_baud_rate", "Changing baud rate from %i to %i",id(uart_1).get_baud_rate(), new_baud_rate);
+          if (id(uart_1).get_baud_rate() != new_baud_rate) {
+            id(uart_1).set_baud_rate(new_baud_rate);
+            id(uart_1).load_settings();
+          }

@@ -1,0 +1,36 @@
+substitutions:
+  name: i2c-sniffer
+
+esphome:
+  name: ${name}
+  min_version: 2024.6.0
+
+#-------------------------------------------
+# ESPHOME PLATFORM SETTINGS
+#-------------------------------------------
+esp32:
+  board: wemos_d1_mini32
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+ota:
+  platform: esphome
+
+logger:
+  level: DEBUG
+
+api:
+  reboot_timeout: 0s
+
+packages:
+  web: !include included/web.yaml
+
+external_components:
+- source: github://hencou/esphome_components
+  components: [i2c_sniffer]
+
+i2c_sniffer: 
+
+
